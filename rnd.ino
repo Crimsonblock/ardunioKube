@@ -38,6 +38,7 @@ typedef union {
 
 
 #ifdef bluetoothLog
+/*
 BLEFloatCharacteristic xAccelChar(X_ACCEL_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic yAccelChar(Y_ACCEL_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic zAccelChar(Z_ACCEL_CHARACTERISTIC, BLERead | BLENotify);
@@ -45,6 +46,10 @@ BLEFloatCharacteristic zAccelChar(Z_ACCEL_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic xGyroChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic yGyroChar(Y_GYRO_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic zGyroChar(Z_GYRO_CHARACTERISTIC, BLERead | BLENotify);
+*/
+
+BLECharacteristic AccelChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 0x000000000000000000000000);
+BLECharacteristic GyroChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 0x000000000000000000000000);
 
 BLEFloatCharacteristic frontChar(ENCODER_CHARACTERISTIC_FRONT, BLERead | BLENotify);
 BLEFloatCharacteristic backChar(ENCODER_CHARACTERISTIC_BACK, BLERead | BLENotify);
@@ -141,21 +146,15 @@ void setup() {
 
 
 void loop() {
-  int g = millis();
   if (flag) {
-    g = millis();
+    int g = millis();
     accelUpdate();
     gyroUpdate();
     flag = 0;
 
     RotaryEncoder();
 
-
-    int f = millis() - g;
-    if(f> prev){
-      prev = f;
-      Serial.println(f);
-    }
+    Serial.println(millis() - g);
   }
 }
 
@@ -201,12 +200,19 @@ void initBLE() {
   BLE.setLocalName(DEVICE_NAME);
 
   BLEService kubeService(KUBE_SERVICE);
+  /*
   kubeService.addCharacteristic(xAccelChar);
   kubeService.addCharacteristic(yAccelChar);
   kubeService.addCharacteristic(zAccelChar);
   kubeService.addCharacteristic(xGyroChar);
   kubeService.addCharacteristic(yGyroChar);
   kubeService.addCharacteristic(zGyroChar);
+  */
+  kubeService.addCharacteristic(AccelChar);
+  kubeService.addCharacteristic(GyroChar);
+
+
+  
   kubeService.addCharacteristic(frontChar);
   kubeService.addCharacteristic(backChar);
   kubeService.addCharacteristic(leftChar);
@@ -227,16 +233,60 @@ void initBLE() {
 void bluetoothSend(char type, float x, float y, float z) {
   BLEDevice central = BLE.central();
   if (central) {
+    floaty_t a;
     switch (type) {
       case ACCEL_DATA:
+      /*
         xAccelChar.writeValue(reverseFloat(x));
         yAccelChar.writeValue(reverseFloat(y));
-        zAccelChar.writeValue(reverseFloat(z));
+        zAccelChar.writeValue(reverseFloat(z));*/
+
+        byte toTransmit[12];
+        a.v = x;
+        toTransmit[0] = a.buffer[3];
+        toTransmit[1] = a.buffer[2];
+        toTransmit[2] = a.buffer[1];
+        toTransmit[3] = a.buffer[0];
+
+        a.v = y;
+        toTransmit[4] = a.buffer[3];
+        toTransmit[5] = a.buffer[2];
+        toTransmit[6] = a.buffer[1];
+        toTransmit[7] = a.buffer[0];
+
+        a.v = z;
+        toTransmit[8] = a.buffer[3];
+        toTransmit[9] = a.buffer[2];
+        toTransmit[10] = a.buffer[1];
+        toTransmit[11] = a.buffer[0];
+
+        AccelChar.writeValue(toTransmit, 12);
+
+
         break;
-      case GYRO_DATA:
+      case GYRO_DATA:/*
         xGyroChar.writeValue(reverseFloat(x));
         yGyroChar.writeValue(reverseFloat(y));
-        zGyroChar.writeValue(reverseFloat(z));
+        zGyroChar.writeValue(reverseFloat(z));*/
+        a.v = x;
+        toTransmit[0] = a.buffer[3];
+        toTransmit[1] = a.buffer[2];
+        toTransmit[2] = a.buffer[1];
+        toTransmit[3] = a.buffer[0];
+
+        a.v = y;
+        toTransmit[4] = a.buffer[3];
+        toTransmit[5] = a.buffer[2];
+        toTransmit[6] = a.buffer[1];
+        toTransmit[7] = a.buffer[0];
+
+        a.v = z;
+        toTransmit[8] = a.buffer[3];
+        toTransmit[9] = a.buffer[2];
+        toTransmit[10] = a.buffer[1];
+        toTransmit[11] = a.buffer[0];
+        GyroChar.writeValue(toTransmit, 12);
+        
         break;
       case FRONT:
         frontChar.writeValue(reverseFloat(x));
