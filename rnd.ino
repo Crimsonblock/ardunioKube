@@ -11,6 +11,8 @@
 #define bluetoothLog
 
 
+#define AVERAGE_SIZE 100
+
 float reverseFloat(float a);
 
 
@@ -24,7 +26,7 @@ char initState = 0;
 typedef union {
   float v;
   char b[4];
-  byte buffer[4];
+  char buffer[4];
 } floaty_t;
 
 
@@ -48,8 +50,8 @@ BLEFloatCharacteristic yGyroChar(Y_GYRO_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic zGyroChar(Z_GYRO_CHARACTERISTIC, BLERead | BLENotify);
 */
 
-BLECharacteristic AccelChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 0x000000000000000000000000);
-BLECharacteristic GyroChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 0x000000000000000000000000);
+BLECharacteristic AccelChar(X_ACCEL_CHARACTERISTIC, BLERead | BLENotify, 12);
+BLECharacteristic GyroChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 12);
 
 BLEFloatCharacteristic frontChar(ENCODER_CHARACTERISTIC_FRONT, BLERead | BLENotify);
 BLEFloatCharacteristic backChar(ENCODER_CHARACTERISTIC_BACK, BLERead | BLENotify);
@@ -69,6 +71,7 @@ int CSB[6] = { 0, 0, 0, 0, 0, 0 };
 int LSA[6] = { 0, 0, 0, 0, 0, 0 };
 int LSB[6] = { 0, 0, 0, 0, 0, 0 };
 char side;
+
 
 #endif  //bluetoothLog
 #pragma endregion
@@ -94,9 +97,9 @@ extern "C" {
 #pragma endregion
 
 
-int prev;
 
-
+int i;
+int avg[AVERAGE_SIZE];
 
 
 
@@ -117,11 +120,11 @@ void setup() {
   //Sets the bit to succesfully set inertial measurement unit
   initState = initState | IMUSuccess;
 
-//Initializes the bluetooth
-#ifdef bluetoothLog
+  //Initializes the bluetooth
+  #ifdef bluetoothLog
   Serial.println("Initializing Bluetooth LE");
   initBLE();
-#endif  //bluetoothLog
+  #endif  //bluetoothLog
   Serial.println("BLE initialization finished");
 
   for (int i = 0; i < 6; i++) {
@@ -141,7 +144,7 @@ void setup() {
   NVIC_EnableIRQ(TIMER4_IRQn);
   NRF_TIMER4->TASKS_START = 1;
 
-  prev = 0;
+  i=0;
 }
 
 
@@ -153,8 +156,15 @@ void loop() {
     flag = 0;
 
     RotaryEncoder();
-
-    Serial.println(millis() - g);
+    avg[i] = millis()-g;
+    int f = 0;
+    for(int g=0; g<AVERAGE_SIZE; g++){
+      f+=avg[g];
+    }
+    Serial.print(f/AVERAGE_SIZE);
+    Serial.print(" - ");
+    Serial.println(avg[i]);
+    i = i>= AVERAGE_SIZE -1 ? 0 : i+1;  
   }
 }
 
@@ -200,18 +210,9 @@ void initBLE() {
   BLE.setLocalName(DEVICE_NAME);
 
   BLEService kubeService(KUBE_SERVICE);
-  /*
-  kubeService.addCharacteristic(xAccelChar);
-  kubeService.addCharacteristic(yAccelChar);
-  kubeService.addCharacteristic(zAccelChar);
-  kubeService.addCharacteristic(xGyroChar);
-  kubeService.addCharacteristic(yGyroChar);
-  kubeService.addCharacteristic(zGyroChar);
-  */
+
   kubeService.addCharacteristic(AccelChar);
   kubeService.addCharacteristic(GyroChar);
-
-
   
   kubeService.addCharacteristic(frontChar);
   kubeService.addCharacteristic(backChar);
@@ -243,25 +244,24 @@ void bluetoothSend(char type, float x, float y, float z) {
 
         byte toTransmit[12];
         a.v = x;
-        toTransmit[0] = a.buffer[3];
-        toTransmit[1] = a.buffer[2];
-        toTransmit[2] = a.buffer[1];
-        toTransmit[3] = a.buffer[0];
+        toTransmit[0] = a.buffer[0];
+        toTransmit[1] = a.buffer[1];
+        toTransmit[2] = a.buffer[2];
+        toTransmit[3] = a.buffer[3];
 
         a.v = y;
-        toTransmit[4] = a.buffer[3];
-        toTransmit[5] = a.buffer[2];
-        toTransmit[6] = a.buffer[1];
-        toTransmit[7] = a.buffer[0];
+        toTransmit[4] = a.buffer[0];
+        toTransmit[5] = a.buffer[1];
+        toTransmit[6] = a.buffer[2];
+        toTransmit[7] = a.buffer[3];
 
         a.v = z;
-        toTransmit[8] = a.buffer[3];
-        toTransmit[9] = a.buffer[2];
-        toTransmit[10] = a.buffer[1];
-        toTransmit[11] = a.buffer[0];
+        toTransmit[8] = a.buffer[0];
+        toTransmit[9] = a.buffer[1];
+        toTransmit[10] = a.buffer[2];
+        toTransmit[11] = a.buffer[3];
 
         AccelChar.writeValue(toTransmit, 12);
-
 
         break;
       case GYRO_DATA:/*
@@ -269,22 +269,22 @@ void bluetoothSend(char type, float x, float y, float z) {
         yGyroChar.writeValue(reverseFloat(y));
         zGyroChar.writeValue(reverseFloat(z));*/
         a.v = x;
-        toTransmit[0] = a.buffer[3];
-        toTransmit[1] = a.buffer[2];
-        toTransmit[2] = a.buffer[1];
-        toTransmit[3] = a.buffer[0];
+        toTransmit[0] = a.buffer[0];
+        toTransmit[1] = a.buffer[1];
+        toTransmit[2] = a.buffer[2];
+        toTransmit[3] = a.buffer[3];
 
         a.v = y;
-        toTransmit[4] = a.buffer[3];
-        toTransmit[5] = a.buffer[2];
-        toTransmit[6] = a.buffer[1];
-        toTransmit[7] = a.buffer[0];
+        toTransmit[4] = a.buffer[0];
+        toTransmit[5] = a.buffer[1];
+        toTransmit[6] = a.buffer[2];
+        toTransmit[7] = a.buffer[3];
 
         a.v = z;
-        toTransmit[8] = a.buffer[3];
-        toTransmit[9] = a.buffer[2];
-        toTransmit[10] = a.buffer[1];
-        toTransmit[11] = a.buffer[0];
+        toTransmit[8] = a.buffer[0];
+        toTransmit[9] = a.buffer[1];
+        toTransmit[10] = a.buffer[2];
+        toTransmit[11] = a.buffer[3];
         GyroChar.writeValue(toTransmit, 12);
         
         break;
