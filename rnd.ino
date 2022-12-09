@@ -150,22 +150,22 @@ void setup() {
 
 void loop() {
   if (flag) {
-    int g = millis();
+    // int g = millis();
     accelUpdate();
     gyroUpdate();
     flag = 0;
 
-    RotaryEncoder();
-    avg[i] = millis()-g;
-    int f = 0;
-    for(int g=0; g<AVERAGE_SIZE; g++){
-      f+=avg[g];
-    }
-    Serial.print(f/AVERAGE_SIZE);
-    Serial.print(" - ");
-    Serial.println(avg[i]);
-    i = i>= AVERAGE_SIZE -1 ? 0 : i+1;  
+    // avg[i] = millis()-g;
+    // int f = 0;
+    // for(int g=0; g<AVERAGE_SIZE; g++){
+    //   f+=avg[g];
+    // }
+    // Serial.print(f/AVERAGE_SIZE);
+    // Serial.print(" - ");
+    // Serial.println(avg[i]);
+    // i = i>= AVERAGE_SIZE -1 ? 0 : i+1;  
   }
+  RotaryEncoder();
 }
 
 
@@ -390,14 +390,14 @@ void RotaryEncoder() {
       }
       sendEncoders(i);
     }
-    if (CSB[i] != LSB[i]) {
-      if (CSA[i] == CSB[i]) {
-        C[i]++;
-      } else {
-        C[i]--;
-      }
-      sendEncoders(i);
-    }
+    // if (CSB[i] != LSB[i]) {
+    //   if (CSA[i] == CSB[i]) {
+    //     C[i]++;
+    //   } else {
+    //     C[i]--;
+    //   }
+    //   sendEncoders(i);
+    //}
     LSA[i] = CSA[i];
     LSB[i] = CSB[i];
   }
