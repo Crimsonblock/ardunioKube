@@ -3,7 +3,10 @@
 
 //Accelerometer characteristics
 #define X_ACCEL_CHARACTERISTIC  "93587151-7c67-4bad-bc28-98e9a25faf21"
-#define Y_ACCEL_CHARACTERISTIC  "7b756df1-c75d-4564-b9cb-4f428bba22ef"
+
+#define ANGLES_CHARACTERISTIC "7b756df1-c75d-4564-b9cb-4f428bba22ef"
+
+//#define Y_ACCEL_CHARACTERISTIC  "7b756df1-c75d-4564-b9cb-4f428bba22ef"
 #define Z_ACCEL_CHARACTERISTIC  "e15951af-c4ea-41f8-a6bf-3c40c2246c80"
 
 // Gyroscope characteristics

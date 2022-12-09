@@ -14,8 +14,9 @@
 #define AVERAGE_SIZE 100
 
 float reverseFloat(float a);
+float square(float x);
 
-
+#define ALPHA 0.98
 
 
 
@@ -52,6 +53,7 @@ BLEFloatCharacteristic zGyroChar(Z_GYRO_CHARACTERISTIC, BLERead | BLENotify);
 
 BLECharacteristic AccelChar(X_ACCEL_CHARACTERISTIC, BLERead | BLENotify, 12);
 BLECharacteristic GyroChar(X_GYRO_CHARACTERISTIC, BLERead | BLENotify, 12);
+BLECharacteristic AnglesChar(ANGLES_CHARACTERISTIC, BLERead | BLENotify, 12);
 
 BLEFloatCharacteristic frontChar(ENCODER_CHARACTERISTIC_FRONT, BLERead | BLENotify);
 BLEFloatCharacteristic backChar(ENCODER_CHARACTERISTIC_BACK, BLERead | BLENotify);
@@ -99,6 +101,7 @@ extern "C" {
 
 
 int i;
+float roll, pitch, yaw;
 int avg[AVERAGE_SIZE];
 
 
@@ -144,26 +147,35 @@ void setup() {
   NVIC_EnableIRQ(TIMER4_IRQn);
   NRF_TIMER4->TASKS_START = 1;
 
-  i=0;
+  pitch =0;
+  roll = 0;
+  yaw = 0;
+
+  i=millis();
 }
 
 
 void loop() {
   if (flag) {
-    // int g = millis();
-    accelUpdate();
-    gyroUpdate();
     flag = 0;
+    if(initState & IMUSuccess){
+      float xAccel, yAccel, zAccel;
+      IMU.readAcceleration(xAccel, yAccel, zAccel);
+      float estPitch = atan2(xAccel, sqrt(square(yAccel)+square(zAccel)));
+      float estRoll = atan2(yAccel, sqrt(square(xAccel)+square(zAccel)));
+      float estYaw = atan2(zAccel, sqrt(square(xAccel)+square(yAccel)));
 
-    // avg[i] = millis()-g;
-    // int f = 0;
-    // for(int g=0; g<AVERAGE_SIZE; g++){
-    //   f+=avg[g];
-    // }
-    // Serial.print(f/AVERAGE_SIZE);
-    // Serial.print(" - ");
-    // Serial.println(avg[i]);
-    // i = i>= AVERAGE_SIZE -1 ? 0 : i+1;  
+      float x, y, z;
+      int elapsedTime = millis() - i;
+      IMU.readGyroscope(x, y, z);
+      
+      pitch = ALPHA*(pitch+ x*elapsedTime) + (1-ALPHA)*estPitch;
+      roll = ALPHA*(roll+ y*elapsedTime) + (1-ALPHA)*estRoll;
+      yaw = ALPHA*(yaw+ z*elapsedTime) + (1-ALPHA)*estYaw;
+
+      sendData(ANGLE_DATA, x, y, z);
+      i=millis();
+    }
   }
   RotaryEncoder();
 }
@@ -221,6 +233,8 @@ void initBLE() {
   kubeService.addCharacteristic(topChar);
   kubeService.addCharacteristic(bottomChar);
 
+  kubeService.addCharacteristic(AnglesChar);
+
   BLE.addService(kubeService);
 
   BLE.setConnectable(true);
@@ -234,6 +248,7 @@ void initBLE() {
 void bluetoothSend(char type, float x, float y, float z) {
   BLEDevice central = BLE.central();
   if (central) {
+    Serial.print(sqrt(4));
     floaty_t a;
     switch (type) {
       case ACCEL_DATA:
@@ -306,6 +321,25 @@ void bluetoothSend(char type, float x, float y, float z) {
       case BOTTOM:
         bottomChar.writeValue(reverseFloat(x));
         break;
+      case ANGLE_DATA:
+        a.v = x;
+        toTransmit[0] = a.buffer[0];
+        toTransmit[1] = a.buffer[1];
+        toTransmit[2] = a.buffer[2];
+        toTransmit[3] = a.buffer[3];
+
+        a.v = y;
+        toTransmit[4] = a.buffer[0];
+        toTransmit[5] = a.buffer[1];
+        toTransmit[6] = a.buffer[2];
+        toTransmit[7] = a.buffer[3];
+
+        a.v = z;
+        toTransmit[8] = a.buffer[0];
+        toTransmit[9] = a.buffer[1];
+        toTransmit[10] = a.buffer[2];
+        toTransmit[11] = a.buffer[3];
+        AnglesChar.writeValue(toTransmit, 12);
     }
   }
 }
@@ -374,6 +408,11 @@ float reverseFloat(float a) {
   return b.v;
 }
 
+
+float square(float x){
+  return x*x;
+}
+
 #pragma endregion  //utility
 
 #pragma region RotaryEncoder
@@ -390,14 +429,6 @@ void RotaryEncoder() {
       }
       sendEncoders(i);
     }
-    // if (CSB[i] != LSB[i]) {
-    //   if (CSA[i] == CSB[i]) {
-    //     C[i]++;
-    //   } else {
-    //     C[i]--;
-    //   }
-    //   sendEncoders(i);
-    //}
     LSA[i] = CSA[i];
     LSB[i] = CSB[i];
   }

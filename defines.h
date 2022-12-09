@@ -14,7 +14,7 @@
 #define RIGHT 5
 #define TOP 6
 #define BOTTOM 7
-
+#define ANGLE_DATA 8
 
 #define DEVICE_NAME "Kube"
 #define Accel
