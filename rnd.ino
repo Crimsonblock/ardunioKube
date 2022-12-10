@@ -159,21 +159,19 @@ void loop() {
   if (flag) {
     flag = 0;
     if(initState & IMUSuccess){
-      float xAccel, yAccel, zAccel;
+      float xAccel, yAccel, zAccel, x, y, z;
+      int elapsedTime = millis() - i;
       IMU.readAcceleration(xAccel, yAccel, zAccel);
+      IMU.readGyroscope(x, y, z);
       float estPitch = atan2(xAccel, sqrt(square(yAccel)+square(zAccel)));
       float estRoll = atan2(yAccel, sqrt(square(xAccel)+square(zAccel)));
       float estYaw = atan2(zAccel, sqrt(square(xAccel)+square(yAccel)));
 
-      float x, y, z;
-      int elapsedTime = millis() - i;
-      IMU.readGyroscope(x, y, z);
-      
       pitch = ALPHA*(pitch+ x*elapsedTime) + (1-ALPHA)*estPitch;
       roll = ALPHA*(roll+ y*elapsedTime) + (1-ALPHA)*estRoll;
       yaw = ALPHA*(yaw+ z*elapsedTime) + (1-ALPHA)*estYaw;
 
-      sendData(ANGLE_DATA, x, y, z);
+      sendData(ANGLE_DATA, pitch, roll, yaw);
       i=millis();
     }
   }
@@ -182,6 +180,8 @@ void loop() {
 
 
 #pragma region sensors
+
+
 #ifdef Accel
 void accelUpdate() {
   if ((initState & IMUSuccess)) {
@@ -206,6 +206,8 @@ void gyroUpdate() {
 }
 #endif  //Gyro
 
+
+#pragma endregion
 
 //Bluetooth-specific functions
 #pragma region bt
