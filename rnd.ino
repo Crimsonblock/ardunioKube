@@ -10,6 +10,8 @@
 
 #define bluetoothLog
 
+#define GYRO_SCALE 1
+
 
 #define AVERAGE_SIZE 100
 
@@ -167,9 +169,9 @@ void loop() {
       float estRoll = atan2(yAccel, sqrt(square(xAccel)+square(zAccel)));
       float estYaw = atan2(zAccel, sqrt(square(xAccel)+square(yAccel)));
 
-      pitch = ALPHA*(pitch+ x*elapsedTime) + (1-ALPHA)*estPitch;
-      roll = ALPHA*(roll+ y*elapsedTime) + (1-ALPHA)*estRoll;
-      yaw = ALPHA*(yaw+ z*elapsedTime) + (1-ALPHA)*estYaw;
+      pitch = ALPHA*(pitch+ x*elapsedTime*GYRO_SCALE) + (1-ALPHA)*estPitch;
+      roll = ALPHA*(roll+ y*elapsedTime*GYRO_SCALE) + (1-ALPHA)*estRoll;
+      yaw = ALPHA*(yaw+ z*elapsedTime*GYRO_SCALE) + (1-ALPHA)*estYaw;
 
       sendData(ANGLE_DATA, pitch, roll, yaw);
       i=millis();
